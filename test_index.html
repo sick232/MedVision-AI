@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedVision AI - Surgical Navigation HUD</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00A79D; --primary-light: #48D1CC; --secondary: #E0B86C; --accent: #4A90E2;
+            --dark-bg: #0D1B2A; --surface-bg: #1B263B; --border-color: #415A77; --text-light: #F0F4F8;
+            --text-medium: #A0AEC0; --danger: #e74c3c; --warning: #f1c40f; --success: #2ecc71;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Space Grotesk', sans-serif; background-color: var(--dark-bg); color: var(--text-light); }
+        .container { max-width: 1800px; margin: 0 auto; padding: 0 2rem; }
+
+        header { background: var(--surface-bg); padding: 1.2rem 0; }
+        .logo { font-size: 1.8rem; font-weight: 700; }
+        .upload-section { background-color: var(--surface-bg); border-radius: 20px; padding: 3rem; margin: 2rem auto 3rem; max-width: 1000px; border: 1px solid var(--border-color); }
+        .upload-container { display: flex; flex-direction: column; align-items: center; gap: 2rem; }
+        .dropzone { width: 100%; max-width: 700px; height: 150px; border-radius: 16px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; background: var(--dark-bg); border: 2px dashed var(--border-color); transition: background-color 0.2s, border-color 0.2s; }
+        .dropzone:hover { background-color: #2a3b4d; border-color: var(--primary); }
+        .analyze-btn { background: var(--primary); color: white; border: none; padding: 1rem 3rem; font-size: 1.1rem; font-weight: 600; border-radius: 12px; cursor: pointer; transition: background-color 0.2s; }
+        .analyze-btn:hover { background-color: var(--primary-light); }
+
+        .navigation-section { display: none; }
+        .navigation-container { display: grid; grid-template-columns: 4fr 1fr; gap: 2rem; align-items: flex-start; }
+        .canvas-container { border: 2px solid var(--border-color); border-radius: 16px; background-color: #000; overflow: hidden; position: relative; }
+        #navigationCanvas { display: block; width: 100%; height: auto; background-color: #000; }
+
+        .controls-panel { display: flex; flex-direction: column; gap: 1.5rem; }
+        .data-card { background: var(--dark-bg); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); }
+        .data-card h3 { color: var(--primary-light); margin-bottom: 1rem; }
+        .action-btn { background: var(--accent); color: white; border: none; padding: 1rem; font-size: 1.1rem; font-weight: 600; border-radius: 8px; cursor: pointer; width: 100%; }
+        .action-btn:disabled { background: var(--border-color); color: var(--text-medium); cursor: not-allowed; }
+
+        .movement-log-list { list-style: none; padding: 0; margin-top: 1rem; max-height: 400px; overflow-y: auto; font-family: 'Roboto Mono', monospace; }
+        .movement-log-item { padding: 0.8rem; border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.9rem; border-left: 4px solid; }
+        .log-safe { border-color: var(--success); } .log-caution { border-color: var(--warning); } .log-warning { border-color: var(--danger); }
+        .log-critical { border-color: var(--danger); background-color: rgba(231, 76, 60, 0.2); font-weight: bold; }
+
+        #aiAssistantText { font-family: 'Roboto Mono', monospace; color: var(--primary-light); min-height: 50px; }
+        .typing-cursor { display: inline-block; width: 8px; height: 1.2rem; background-color: var(--primary-light); animation: blink 1s infinite; vertical-align: middle; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(13, 27, 42, 0.8); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        .modal-content { background: var(--surface-bg); color: var(--text-light); border-radius: 16px; padding: 2rem; width: 90%; max-width: 700px; border: 1px solid var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-content h2 { color: var(--primary-light); margin-bottom: 1.5rem; }
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; font-family: 'Roboto Mono', monospace; }
+        .summary-item { background: var(--dark-bg); padding: 1rem; border-radius: 8px; }
+        .summary-item .label { color: var(--text-medium); font-size: 0.9rem; }
+        .summary-item .value { font-size: 1.2rem; font-weight: bold; }
+        #geminiSummary { border-top: 1px solid var(--border-color); padding-top: 1.5rem; margin-top: 1.5rem; }
+
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(13, 27, 42, 0.9); display: none; justify-content: center; align-items: center; z-index: 9999; }
+        .loading-spinner { width: 50px; height: 50px; border: 5px solid var(--border-color); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body>
+    <header><div class="container"><div class="logo"><i class="fas fa-eye"></i> MedVision AI</div></div></header>
+
+    <main class="container">
+        <section class="upload-section" id="analyze">
+             <div class="upload-container">
+                <div class="dropzone" id="dropzone"><p>Drop Medical Scan Here or Click to Upload</p></div>
+                <input type="file" id="fileInput" accept="image/png, image/jpeg, image/jpg" hidden>
+                <select id="modelSelect" style="width: 700px; max-width:100%; padding: 10px; background: var(--dark-bg); color:white; border: 1px solid var(--border-color);">
+                    <option value="liver">Liver Tumour</option>
+                    <option value="brain_mri">Brain Tumour</option>
+                    <option value="kidney">Kidney Stone</option>
+                    <option value="lung">Lung Cancer</option>
+                </select>
+                <button class="analyze-btn" id="analyzeBtn">Analyze Image</button>
+            </div>
+        </section>
+        <section class="navigation-section" id="navigationSection">
+            <div class="navigation-container">
+                <div class="canvas-container"><canvas id="navigationCanvas" width="1400" height="1050"></canvas></div>
+                <div class="controls-panel">
+                    <div class="data-card">
+                        <h3><i class="fas fa-play-circle"></i> Simulation</h3>
+                        <button class="action-btn" id="startSimBtn" disabled>Initialize</button>
+                    </div>
+                    <div class="data-card">
+                        <h3><i class="fas fa-robot"></i> AI Surgical Assistant</h3>
+                        <div id="aiAssistantText">Awaiting procedure start...</div>
+                    </div>
+                    <div class="data-card">
+                        <h3><i class="fas fa-history"></i> Operation Log</h3>
+                        <ul class="movement-log-list" id="movementLogList"></ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="summaryModal">
+        <div class="modal-content">
+            <h2>Post-Procedure Report</h2>
+            <div class="summary-grid">
+                <div class="summary-item"><span class="label">Total Maneuvers</span><div id="summaryMoves" class="value"></div></div>
+                <div class="summary-item"><span class="label">No-Fly Zone Breaches</span><div id="summaryNfz" class="value"></div></div>
+                <div class="summary-item" style="grid-column: 1 / -1;"><span class="label">Severity Breakdown</span><div id="summarySeverity" class="value"></div></div>
+            </div>
+            <div id="geminiSummary">
+                <h3><i class="fas fa-comment-medical"></i> AI Assessment</h3>
+                <p id="geminiSummaryText"></p>
+            </div>
+            <button class="action-btn" style="margin-top: 2rem;" onclick="document.getElementById('summaryModal').style.display='none'">Close Report</button>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div></div>
+
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const canvas = document.getElementById('navigationCanvas');
+        const ctx = canvas.getContext('2d');
+        const startSimBtn = document.getElementById('startSimBtn');
+        const logList = document.getElementById('movementLogList');
+        const aiAssistantText = document.getElementById('aiAssistantText');
+
+        let image = new Image();
+        let primaryTargetBbox, detectedClassName;
+        let scanlineY = 0, lastTimestamp = 0, isLoopRunning = false;
+
+        let renderState = {
+            status: 'AWAITING INIT', statusColor: '#888',
+            view: { x: canvas.width / 2, y: canvas.height / 2, scale: 1.0 },
+            movementPoints: [], secondaryTargets: [], noFlyZones: [],
+            locateProgress: 0, alertOpacity: 0, alertColor: '', hud: {},
+            procedureAnalytics: { moves: 0, nfzBreaches: 0, severities: { safe: 0, caution: 0, warning: 0, critical: 0 } }
+        };
+
+        const PIXELS_PER_MM = 5;
+        const SIMULATION_STEPS = 5;
+        const SEVERITY_THRESHOLDS = { caution: 10, warning: 25 };
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        dropzone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', () => { if (fileInput.files.length > 0) { dropzone.innerHTML = `<p>File selected: ${fileInput.files[0].name}</p>`; } });
+        analyzeBtn.addEventListener('click', () => {
+            const file = fileInput.files[0];
+            if (!file) { alert('Please select an image file first.'); return; }
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('model', document.getElementById('modelSelect').value);
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            fetch('/detect', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    if (data.error) { alert(`Error: ${data.error}`); return; }
+                    initializeNavigation(data);
+                })
+                .catch(error => {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    console.error('Error:', error);
+                    alert('An unexpected error occurred.');
+                });
+        });
+        startSimBtn.addEventListener('click', runSimulation);
+
+        function initializeNavigation(data) {
+            const allTargets = data.detections.filter(d => "tumor tumour stone".includes(d.class));
+            if (allTargets.length === 0) { alert('No primary target could be detected.'); return; }
+            allTargets.sort((a, b) => ((b.bbox[2] - b.bbox[0]) * (b.bbox[3] - b.bbox[1])) - ((a.bbox[2] - a.bbox[0]) * (a.bbox[3] - a.bbox[1])));
+            const primaryTarget = allTargets[0];
+            detectedClassName = primaryTarget.class;
+            const bbox = primaryTarget.bbox;
+            primaryTargetBbox = {
+                x: bbox[0], y: bbox[1], width: bbox[2] - bbox[0], height: bbox[3] - bbox[1],
+                centerX: bbox[0] + (bbox[2] - bbox[0]) / 2, centerY: bbox[1] + (bbox[3] - bbox[1]) / 2,
+            };
+
+            logList.innerHTML = '';
+            image.src = data.original_image;
+            image.onload = async () => {
+                const initialScale = Math.min(canvas.width / image.width, canvas.height / image.height) * 0.9;
+
+                renderState = {
+                    status: 'INITIALIZING...', statusColor: 'var(--text-medium)',
+                    view: { x: canvas.width / 2, y: canvas.height / 2, scale: initialScale },
+                    movementPoints: [{ x: canvas.width / 2, y: canvas.height / 2, scale: initialScale }],
+                    secondaryTargets: allTargets.slice(1),
+                    noFlyZones: [
+                        { x: primaryTargetBbox.centerX - 150, y: primaryTargetBbox.centerY - 50, radius: 40 },
+                        { x: primaryTargetBbox.centerX + 100, y: primaryTargetBbox.centerY + 120, radius: 50 }
+                    ],
+                    locateProgress: 0, alertOpacity: 0, alertColor: '', hud: {},
+                    procedureAnalytics: { moves: 0, nfzBreaches: 0, severities: { safe: 0, caution: 0, warning: 0, critical: 0 } }
+                };
+
+                document.getElementById('navigationSection').style.display = 'grid';
+                document.getElementById('analyze').style.display = 'none';
+                await displayInitialDetection();
+                startSimBtn.disabled = false;
+                startSimBtn.textContent = "Start Simulation";
+                if (!isLoopRunning) { isLoopRunning = true; requestAnimationFrame(gameLoop); }
+            };
+        }
+
+        async function displayInitialDetection() {
+            renderState.status = `${detectedClassName.toUpperCase()} DETECTED (PRIMARY)`;
+            renderState.statusColor = 'var(--primary)';
+            await sleep(2500);
+            renderState.status = 'READY';
+            renderState.statusColor = 'var(--success)';
+        }
+
+        async function runSimulation() {
+            startSimBtn.disabled = true;
+            logList.innerHTML = '';
+            await typeMessage(aiAssistantText, "Procedure starting. Calibrating initial position.");
+
+            const alertPlan = ['warning', 'safe', 'caution', 'caution', 'caution'];
+            for (let i = alertPlan.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [alertPlan[i], alertPlan[j]] = [alertPlan[j], alertPlan[i]];
+            }
+
+            for (let i = 0; i < SIMULATION_STEPS; i++) {
+                const previousPoint = renderState.movementPoints[renderState.movementPoints.length - 1];
+
+                renderState.status = "LOCATING PRIMARY TARGET...";
+                renderState.statusColor = 'var(--primary-light)';
+                await animateProgress(p => renderState.locateProgress = p, 1500);
+
+                renderState.status = "TARGET LOCKED";
+                renderState.statusColor = 'var(--danger)';
+                await sleep(1000);
+                renderState.locateProgress = 0;
+
+                renderState.status = "REPOSITIONING...";
+                renderState.statusColor = 'var(--accent)';
+
+                const targetSeverity = alertPlan[i];
+                const { dx, dy } = generateMovementForSeverity(targetSeverity);
+                const nextPoint = {
+                    x: previousPoint.x + dx,
+                    y: previousPoint.y + dy,
+                    scale: previousPoint.scale * (Math.random() * 0.2 + 0.9)
+                };
+
+                await animateView(previousPoint, nextPoint, 800);
+                renderState.movementPoints.push(nextPoint);
+
+                const nfzBreach = checkNfzIntersection(nextPoint);
+                if (nfzBreach) {
+                    renderState.procedureAnalytics.nfzBreaches++;
+                }
+
+                updateAndLog(previousPoint, nextPoint, i + 1, nfzBreach);
+                await triggerAlert(renderState.hud.severity);
+                await getSurgicalAdvice(nfzBreach);
+                await sleep(5000);
+            }
+            renderState.status = "PROCEDURE COMPLETE";
+            renderState.statusColor = 'var(--success)';
+            startSimBtn.textContent = "Run Again";
+            startSimBtn.disabled = false;
+            await showProcedureSummary();
+        }
+
+        async function showProcedureSummary() {
+            const pa = renderState.procedureAnalytics;
+            document.getElementById('summaryMoves').textContent = pa.moves;
+            document.getElementById('summaryNfz').textContent = pa.nfzBreaches;
+            const severityText = `${pa.severities.safe} Safe | ${pa.severities.caution} Caution | ${pa.severities.warning} Warning | ${pa.severities.critical} Critical`;
+            document.getElementById('summarySeverity').textContent = severityText;
+
+            const context = {
+                target_class: detectedClassName,
+                total_moves: pa.moves,
+                nfz_breaches: pa.nfzBreaches,
+                severity_breakdown: severityText.replace(/ \| /g, ', ')
+            };
+
+            await typeMessage(document.getElementById('geminiSummaryText'), "Generating AI Assessment...");
+            try {
+                const response = await fetch('/get_procedure_summary', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(context)
+                });
+                const data = await response.json();
+                await typeMessage(document.getElementById('geminiSummaryText'), data.summary);
+            } catch (e) { await typeMessage(document.getElementById('geminiSummaryText'), "Could not generate summary."); }
+
+            document.getElementById('summaryModal').style.display = 'flex';
+        }
+
+        function generateMovementForSeverity(severity) {
+            let min_dist_mm = 0, max_dist_mm = 0;
+            if (severity === 'safe') {
+                min_dist_mm = 1; max_dist_mm = SEVERITY_THRESHOLDS.caution;
+            } else if (severity === 'caution') {
+                min_dist_mm = SEVERITY_THRESHOLDS.caution; max_dist_mm = SEVERITY_THRESHOLDS.warning;
+            } else { // warning
+                min_dist_mm = SEVERITY_THRESHOLDS.warning; max_dist_mm = 40;
+            }
+            const target_dist_px = (Math.random() * (max_dist_mm - min_dist_mm) + min_dist_mm) * PIXELS_PER_MM;
+            const angle = Math.random() * 2 * Math.PI;
+            const dx = Math.cos(angle) * target_dist_px;
+            const dy = Math.sin(angle) * target_dist_px;
+            return { dx, dy };
+        }
+
+        async function getSurgicalAdvice(nfzBreach = false) {
+            const context = {
+                target_class: detectedClassName,
+                distance: renderState.hud.distance.split(' ')[0],
+                severity: renderState.hud.severity,
+                nfz_breach: nfzBreach ? 'just' : 'not'
+            };
+            await typeMessage(aiAssistantText, "AI analyzing...");
+            try {
+                const response = await fetch('/get_gemini_advice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(context)
+                });
+                const data = await response.json();
+                await typeMessage(aiAssistantText, data.advice);
+            } catch (e) { await typeMessage(aiAssistantText, "Assistant connection error."); }
+        }
+
+        function typeMessage(element, text) {
+            return new Promise(resolve => {
+                element.innerHTML = "";
+                let i = 0;
+                const interval = setInterval(() => {
+                    if (i < text.length) {
+                        element.innerHTML += text.charAt(i);
+                        i++;
+                    } else {
+                        clearInterval(interval);
+                        const cursor = element.querySelector('.typing-cursor');
+                        if(cursor) cursor.remove();
+                        resolve();
+                    }
+                }, 30);
+                const cursor = document.createElement('span');
+                cursor.className = 'typing-cursor';
+                element.appendChild(cursor);
+            });
+        }
+
+        function gameLoop(timestamp) {
+            if(!isLoopRunning) return;
+            const deltaTime = timestamp - lastTimestamp;
+            lastTimestamp = timestamp;
+            if(deltaTime > 0) scanlineY = (scanlineY + deltaTime * 0.05) % canvas.height;
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (!primaryTargetBbox) return;
+
+            ctx.save();
+            ctx.translate(renderState.view.x, renderState.view.y);
+            ctx.scale(renderState.view.scale, renderState.view.scale);
+            ctx.translate(-primaryTargetBbox.centerX, -primaryTargetBbox.centerY);
+            ctx.drawImage(image, 0, 0);
+
+            ctx.lineWidth = 2 / renderState.view.scale;
+            ctx.fillStyle = `rgba(74, 144, 226, 0.3)`;
+            ctx.strokeStyle = `rgba(74, 144, 226, 0.8)`;
+            for (const target of renderState.secondaryTargets) {
+                const bbox = target.bbox;
+                ctx.fillRect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]);
+                ctx.strokeRect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]);
+            }
+
+            ctx.fillStyle = `rgba(231, 76, 60, 0.3)`;
+            ctx.strokeStyle = `rgba(231, 76, 60, 0.8)`;
+            ctx.fillRect(primaryTargetBbox.x, primaryTargetBbox.y, primaryTargetBbox.width, primaryTargetBbox.height);
+            ctx.strokeRect(primaryTargetBbox.x, primaryTargetBbox.y, primaryTargetBbox.width, primaryTargetBbox.height);
+
+            ctx.fillStyle = 'rgba(231, 76, 60, 0.1)';
+            ctx.strokeStyle = 'rgba(231, 76, 60, 0.4)';
+            for (const zone of renderState.noFlyZones) {
+                ctx.beginPath();
+                ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            drawVignette();
+            drawScanlines();
+
+            if (renderState.alertOpacity > 0) {
+                ctx.globalAlpha = renderState.alertOpacity;
+                ctx.strokeStyle = renderState.alertColor;
+                ctx.lineWidth = 20;
+                ctx.strokeRect(0, 0, canvas.width, canvas.height);
+                ctx.globalAlpha = 1.0;
+            }
+
+            for(let i = 1; i < renderState.movementPoints.length; i++) {
+                const isLast = (i === renderState.movementPoints.length - 1);
+                drawMeasurementVector(renderState.movementPoints[i-1], renderState.movementPoints[i], isLast);
+            }
+            drawReticle(renderState.view.x, renderState.view.y, renderState.locateProgress);
+            drawHUD();
+        }
+
+        function animateProgress(updateCallback, duration) {
+            return new Promise(resolve => {
+                let startTime = null;
+                const step = (timestamp) => {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    updateCallback(progress);
+                    if (progress < 1) requestAnimationFrame(step);
+                    else resolve();
+                };
+                requestAnimationFrame(step);
+            });
+        }
+
+        function animateView(start, end, duration) {
+            const updateCallback = (progress) => {
+                renderState.view.x = start.x + (end.x - start.x) * progress;
+                renderState.view.y = start.y + (end.y - start.y) * progress;
+                renderState.view.scale = start.scale + (end.scale - start.scale) * progress;
+            };
+            return animateProgress(updateCallback, duration);
+        }
+
+        function triggerAlert(severity) {
+            const colors = { safe: 'var(--success)', caution: 'var(--warning)', warning: 'var(--danger)', critical: 'var(--danger)' };
+            renderState.alertColor = colors[severity];
+            return animateProgress(p => renderState.alertOpacity = Math.sin(p * Math.PI), 800);
+        }
+
+        function checkNfzIntersection(p2) {
+            const view = renderState.view;
+            for (const zone of renderState.noFlyZones) {
+                const zoneCanvasSpace = {
+                    x: (zone.x - primaryTargetBbox.centerX) * view.scale + view.x,
+                    y: (zone.y - primaryTargetBbox.centerY) * view.scale + view.y,
+                    radius: zone.radius * view.scale
+                };
+                const dist = Math.sqrt(Math.pow(p2.x - zoneCanvasSpace.x, 2) + Math.pow(p2.y - zoneCanvasSpace.y, 2));
+                if (dist < zoneCanvasSpace.radius) return true;
+            }
+            return false;
+        }
+
+        function updateAndLog(startPoint, endPoint, step, nfzBreach = false) {
+            const dx = endPoint.x - startPoint.x, dy = endPoint.y - startPoint.y;
+            const distMm = Math.sqrt(dx*dx + dy*dy) / PIXELS_PER_MM;
+            const angle = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
+
+            let severity = 'safe';
+            if (nfzBreach) severity = 'critical';
+            else if (distMm > SEVERITY_THRESHOLDS.warning) severity = 'warning';
+            else if (distMm > SEVERITY_THRESHOLDS.caution) severity = 'caution';
+
+            renderState.hud = { distance: `${distMm.toFixed(2)} mm`, angle: `${angle.toFixed(1)}°`, severity: severity };
+            renderState.procedureAnalytics.moves++;
+            renderState.procedureAnalytics.severities[severity]++;
+
+            const item = document.createElement('li');
+            item.className = `movement-log-item log-${severity}`;
+            item.innerHTML = `<b>Move ${step}:</b> ${renderState.hud.distance} at ${renderState.hud.angle}.`;
+            if (nfzBreach) item.innerHTML += ` <span style="color:var(--danger); font-weight:bold;">NFZ BREACH!</span>`;
+            logList.appendChild(item);
+        }
+
+        function drawHUD() {
+            ctx.save();
+            ctx.fillStyle = 'rgba(27, 38, 59, 0.85)';
+            ctx.beginPath();
+            ctx.moveTo(0, 0); ctx.lineTo(450, 0); ctx.lineTo(420, 150); ctx.lineTo(0, 150); ctx.closePath();
+            ctx.fill();
+
+            // ECG Bio-Metrics
+            ctx.strokeStyle = 'var(--success)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const ecgY = 40;
+            const ecgWidth = 120;
+            const heartRate = 70 + Math.sin(Date.now() / 400) * 5;
+            const speed = Date.now() / 2;
+            for(let i=0; i < ecgWidth; i++) {
+                const x = canvas.width - 150 + i;
+                const p = (i + speed) % ecgWidth;
+                const y_offset = (p > 50 && p < 60) ? -15*Math.sin((p-50)/10 * Math.PI) : (p > 60 && p < 65) ? 5 : 0;
+                ctx.lineTo(x, ecgY + y_offset);
+            }
+            ctx.stroke();
+            ctx.fillStyle = 'var(--success)';
+            ctx.font = 'bold 20px "Roboto Mono"';
+            ctx.fillText(`♥ ${heartRate.toFixed(0)}`, canvas.width - 150, ecgY + 25);
+
+            // Status Text
+            ctx.fillStyle = renderState.statusColor;
+            ctx.textAlign = 'left';
+            ctx.fillText(`STATUS: ${renderState.status}`, 20, 40);
+
+            if(renderState.hud.distance) {
+                const severityColors = { safe: 'var(--success)', caution: 'var(--warning)', warning: 'var(--danger)', critical: 'var(--danger)'};
+                ctx.fillStyle = severityColors[renderState.hud.severity];
+                ctx.font = '16px "Roboto Mono"';
+                ctx.fillText(`SEVERITY  : ${renderState.hud.severity.toUpperCase()}`, 20, 70);
+                ctx.fillStyle = 'white';
+                ctx.fillText(`LAST MOVE : ${renderState.hud.distance} @ ${renderState.hud.angle}`, 20, 95);
+            }
+            ctx.restore();
+        }
+
+        function drawMeasurementVector(p1, p2, isLast) {
+             if (!isLast) {
+                ctx.strokeStyle = 'rgba(255, 255, 0, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+                return;
+            }
+
+            const dx = p2.x - p1.x, dy = p2.y - p1.y;
+            const angle = Math.atan2(dy, dx);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p1.y);
+            ctx.moveTo(p2.x, p1.y); ctx.lineTo(p2.x, p2.y); // Swapped order for right angle
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.strokeStyle = 'yellow';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+
+            ctx.save();
+            ctx.translate(p2.x, p2.y);
+            ctx.rotate(angle);
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-10, -5); ctx.lineTo(-10, 5); ctx.closePath(); ctx.fill();
+            ctx.restore();
+
+            ctx.font = '14px "Roboto Mono"';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            ctx.fillStyle = 'var(--primary-light)';
+            ctx.fillText(`ΔX: ${(dx / PIXELS_PER_MM).toFixed(1)}mm`, p1.x + dx / 2, p1.y - 15);
+
+            ctx.fillStyle = 'var(--accent)';
+            ctx.save();
+            ctx.translate(p2.x + 15, p1.y + dy / 2);
+            ctx.rotate(Math.PI / 2);
+            ctx.fillText(`ΔY: ${(dy / PIXELS_PER_MM).toFixed(1)}mm`, 0, 0);
+            ctx.restore();
+        }
+
+        function drawVignette() {
+            const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, canvas.width/2-200, canvas.width/2, canvas.height/2, canvas.width/2+100);
+            gradient.addColorStop(0, 'rgba(0,0,0,0)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0.7)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0,0,canvas.width, canvas.height);
+        }
+
+        function drawScanlines() {
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.03)';
+            ctx.fillRect(0, scanlineY, canvas.width, 4);
+        }
+
+        function drawReticle(x, y, progress) {
+            const baseRadius = 20;
+            const pulseRadius = baseRadius + Math.sin(progress * Math.PI) * 15;
+            const lockProgress = Math.min(progress * 2, 1);
+            const color = `rgba(231, 76, 60, ${lockProgress})`;
+            const weakColor = `rgba(231, 76, 60, ${lockProgress * 0.5})`;
+
+            ctx.strokeStyle = color; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(x, y, pulseRadius, 0, Math.PI * 2); ctx.stroke();
+            ctx.strokeStyle = weakColor;
+            ctx.beginPath(); ctx.arc(x, y, baseRadius, 0, Math.PI * 2); ctx.stroke();
+            const lineLength = baseRadius * 1.5 * lockProgress;
+            ctx.beginPath();
+            ctx.moveTo(x - lineLength, y); ctx.lineTo(x + lineLength, y);
+            ctx.moveTo(x, y - lineLength); ctx.lineTo(x, y + lineLength);
+            ctx.stroke();
+        }
+    </script>
+</body>
+</html>
