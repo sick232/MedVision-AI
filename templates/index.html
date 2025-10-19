@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedVision AI - Intelligent Medical Imaging</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* New Professional & Clinical Color Palette */
+            --primary: #00A79D;       /* Deep Teal */
+            --primary-light: #48D1CC; /* Medium Turquoise */
+            --secondary: #E0B86C;     /* Muted Gold/Bronze */
+            --accent: #4A90E2;        /* Soft Blue */
+            --dark-bg: #0D1B2A;       /* Very Dark Blue-Gray */
+            --surface-bg: #1B263B;    /* Lighter Dark Blue for cards */
+            --border-color: #415A77;  /* Muted Blue for borders */
+            --text-light: #F0F4F8;    /* Off-white */
+            --text-medium: #A0AEC0;   /* Light Gray */
+            --text-dark: #7D8597;     /* Medium Gray */
+            --success: #28a745;       /* Green */
+            --warning: #ffc107;       /* Yellow */
+            --danger: #dc3545;        /* Red */
+
+            /* Soft UI Shadows */
+            --shadow-soft: 0px 4px 12px rgba(0, 0, 0, 0.2);
+            --shadow-medium: 0px 8px 24px rgba(0, 0, 0, 0.3);
+            --shadow-inset: inset 0px 2px 4px rgba(0, 0, 0, 0.3);
+
+            /* Animation Speeds */
+            --speed-fast: 0.2s;
+            --speed-normal: 0.35s;
+            --speed-slow: 0.5s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Header */
+        header {
+            background: var(--surface-bg);
+            color: white;
+            padding: 1.2rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-medium);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-light);
+            transition: all var(--speed-normal) ease;
+        }
+
+        .logo:hover {
+            transform: translateY(-2px);
+            color: var(--primary-light);
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2.5rem;
+        }
+
+        nav a {
+            color: var(--text-medium);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all var(--speed-fast) ease;
+            padding: 0.6rem 0.2rem;
+            position: relative;
+        }
+
+        nav a::before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 3px;
+            bottom: -5px;
+            left: 0;
+            background-color: var(--primary);
+            transition: width var(--speed-fast) ease;
+            border-radius: 2px;
+        }
+
+        nav a:hover {
+            color: white;
+        }
+
+        nav a:hover::before, nav a.active::before {
+            width: 100%;
+        }
+
+        nav a.active {
+            color: white;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: all var(--speed-fast) ease;
+        }
+
+        .mobile-menu-btn:hover {
+            color: var(--primary-light);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(180deg, var(--dark-bg) 0%, #08121e 100%);
+            color: white;
+            padding: 6rem 0 8rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.1;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-light);
+            position: relative;
+            display: inline-block;
+        }
+
+        .hero h1 .highlight {
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            color: var(--text-medium);
+        }
+
+        /* Soft UI Upload Section */
+        .upload-section {
+            background-color: var(--surface-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-soft);
+            padding: 3rem;
+            margin: -5rem auto 5rem;
+            max-width: 1000px;
+            transition: all var(--speed-normal) ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        .upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .section-title h2 {
+            font-size: 2.2rem;
+            color: white;
+            display: inline-block;
+            padding-bottom: 15px;
+        }
+
+        .section-title h2::after {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 4px;
+            background: var(--primary);
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        /* Dropzone */
+        .dropzone {
+            width: 100%;
+            max-width: 700px;
+            height: 250px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all var(--speed-normal) ease;
+            background: var(--dark-bg);
+            border: 2px dashed var(--border-color);
+        }
+
+        .dropzone.active, .dropzone:hover {
+            border-color: var(--primary);
+            background: #102135;
+        }
+
+        .dropzone i {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            transition: all var(--speed-normal) ease;
+        }
+
+        .dropzone p {
+            text-align: center;
+            color: var(--text-medium);
+            font-size: 1.1rem;
+            max-width: 80%;
+        }
+
+        .dropzone small {
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .dropzone input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Preview Container */
+        .preview-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 1.5rem;
+        }
+
+        .preview-image-wrapper {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+            transition: all var(--speed-normal) ease;
+        }
+
+        .preview-image-wrapper:hover {
+             box-shadow: var(--shadow-medium);
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .remove-image {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background-color: rgba(220, 53, 69, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            opacity: 0;
+            transition: all var(--speed-fast) ease;
+        }
+
+        .preview-image-wrapper:hover .remove-image {
+            opacity: 1;
+        }
+
+        /* Model Selector */
+        .model-selector {
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .model-selector label {
+            display: block;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .model-select-container {
+            position: relative;
+        }
+
+        .model-select {
+            width: 100%;
+            padding: 1.2rem 1.5rem;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            transition: all var(--speed-normal) ease;
+            background-color: var(--dark-bg);
+            border: 2px solid var(--border-color);
+            color: white;
+            appearance: none;
+            box-shadow: var(--shadow-inset);
+        }
+
+        .model-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 167, 157, 0.3);
+        }
+
+        .select-arrow {
+            position: absolute;
+            top: 50%;
+            right: 1.5rem;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--text-medium);
+        }
+
+        /* Analyze Button */
+        .analyze-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1.2rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all var(--speed-normal) ease;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            box-shadow: 0 4px 15px rgba(0, 167, 157, 0.3);
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 167, 157, 0.4);
+            background: var(--primary-light);
+        }
+
+        .analyze-btn:active {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-inset);
+        }
+
+        .analyze-btn:disabled {
+            background: var(--border-color);
+            color: var(--text-dark);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+            background: var(--surface-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow-medium);
+            padding: 3rem;
+            margin-bottom: 5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .results-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+        }
+
+        /* Image Comparison */
+        .image-comparison {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            position: relative;
+        }
+
+        /* --- NEW: Focused Chunk Animation --- */
+        .focused-chunk-container {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+            height: 450px;
+            background-color: var(--dark-bg);
+            display: none;
+        }
+
+        .focused-chunk-container .scan-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: filter 0.3s ease;
+        }
+
+        .chunk-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: grid;
+        }
+
+        .chunk {
+            transition: all 0.2s ease-in-out;
+            background-color: rgba(0,0,0,0.8); /* Initially hide other chunks */
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .chunk.analyzing {
+            background-color: rgba(72, 209, 204, 0.15); /* Make it visible */
+            box-shadow: inset 0 0 0 3px var(--primary-light), 0 0 20px var(--primary-light);
+            z-index: 10;
+        }
+
+        .chunk.detected {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-color: var(--danger);
+        }
+
+        .chunk.clear {
+            background-color: rgba(40, 167, 69, 0.1);
+            border-color: rgba(40, 167, 69, 0.5);
+        }
+
+
+        .scan-info-panel {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, rgba(13, 27, 42, 0.95), transparent);
+            padding: 1.5rem 1rem 1rem;
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            text-align: center;
+            z-index: 20;
+        }
+
+        .scan-info-panel .status {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        .scan-info-panel .details {
+            font-size: 1rem;
+            color: var(--text-medium);
+            min-height: 20px;
+        }
+
+
+        .image-slider-container {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+            height: 400px;
+        }
+
+        .image-slider {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .image-slider img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background-color: var(--dark-bg);
+        }
+
+        #originalImage { z-index: 1; }
+        #processedImage { z-index: 2; clip-path: inset(0 50% 0 0); }
+
+        .slider-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: white;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            cursor: ew-resize;
+        }
+
+        .slider-handle::after {
+            content: '\f337';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: var(--dark-bg);
+        }
+
+        .image-caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(13, 27, 42, 0.9), transparent);
+            color: white;
+            padding: 1rem;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Detection Results Panel */
+        .detection-results {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease-in-out, visibility 0.5s;
+        }
+
+        .detection-results.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .detection-card {
+            background: var(--dark-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-inset);
+            border: 1px solid var(--border-color);
+        }
+
+        .detection-card h3 {
+            color: white;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .detection-card h3 i {
+            color: var(--primary);
+            font-size: 1.6rem;
+        }
+
+        .detection-list { display: flex; flex-direction: column; gap: 1rem; }
+        .detection-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-radius: 10px; background: var(--surface-bg); }
+        .detection-label { font-weight: 600; color: white; }
+
+        .confidence-meter { display: flex; align-items: center; gap: 1rem; min-width: 180px; }
+        .meter-bar { height: 10px; flex-grow: 1; background-color: rgba(255, 255, 255, 0.1); border-radius: 5px; }
+        .meter-fill { height: 100%; border-radius: 5px; width: 0; transition: width 1s ease-out; }
+        .confidence-value { font-weight: 700; min-width: 60px; text-align: right; }
+
+        /* AI Insights */
+        .ai-insights {
+            background: var(--surface-bg);
+            border-left: 4px solid var(--secondary);
+            padding: 2rem;
+            border-radius: 0 16px 16px 0;
+        }
+
+        .ai-insights h3 {
+            color: white;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .ai-insights h3 i { color: var(--secondary); }
+        .ai-insights-content { line-height: 1.8; font-size: 1.05rem; color: var(--text-medium); }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1.2rem;
+            background-color: var(--secondary);
+            margin-left: 2px;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* Report Actions */
+        .report-actions { display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; }
+        .action-btn { padding: 1.1rem 2.2rem; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all var(--speed-normal) ease; display: flex; align-items: center; gap: 0.8rem; font-size: 1.05rem; }
+
+        .download-btn { background: var(--secondary); color: var(--dark-bg); border: none; box-shadow: 0 4px 15px rgba(224, 184, 108, 0.3); }
+        .download-btn:hover { background: #f0c987; transform: translateY(-3px); box-shadow: 0 8px 25px rgba(224, 184, 108, 0.4); }
+
+        .new-analysis-btn { background: transparent; color: var(--primary-light); border: 2px solid var(--primary); }
+        .new-analysis-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Features Section */
+        .features-section { padding: 5rem 0; background: var(--dark-bg); }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2.5rem; margin-top: 3rem; }
+
+        .feature-card {
+            background: var(--surface-bg);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            transition: all var(--speed-normal) ease;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-color);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            border-color: var(--primary);
+        }
+
+        .feature-icon { font-size: 3rem; margin-bottom: 2rem; color: var(--primary); }
+        .feature-card h3 { margin-bottom: 1.5rem; color: white; font-size: 1.4rem; }
+        .feature-card p { color: var(--text-medium); font-size: 1.05rem; }
+
+        /* Footer */
+        footer {
+            background: #08121e;
+            color: white;
+            padding: 4rem 0 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 3rem; margin-bottom: 3rem; }
+        .footer-column h3 { font-size: 1.4rem; margin-bottom: 1.8rem; padding-bottom: 12px; color: white; position: relative; }
+        .footer-column h3::after { content: ''; position: absolute; width: 50px; height: 3px; background: var(--primary); bottom: 0; left: 0; border-radius: 3px; }
+
+        .footer-logo { color: var(--text-light); }
+        .footer-description { color: var(--text-medium); margin-bottom: 1.5rem; }
+
+        .social-links { display: flex; gap: 1.2rem; margin-top: 1.5rem; }
+        .social-link { display: flex; align-items: center; justify-content: center; width: 45px; height: 45px; border-radius: 50%; color: var(--text-medium); transition: all var(--speed-normal) ease; border: 1px solid var(--border-color); }
+        .social-link:hover { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-3px); }
+
+        .footer-links { list-style: none; }
+        .footer-links li { margin-bottom: 1rem; }
+        .footer-links a { color: var(--text-medium); text-decoration: none; transition: all var(--speed-fast) ease; }
+        .footer-links a:hover { color: var(--primary-light); transform: translateX(5px); }
+
+        .contact-info { list-style: none; }
+        .contact-info li { margin-bottom: 1.2rem; display: flex; align-items: flex-start; gap: 1rem; color: var(--text-medium); }
+        .contact-info i { color: var(--primary); font-size: 1.2rem; margin-top: 3px; }
+
+        .copyright { text-align: center; padding-top: 2rem; border-top: 1px solid var(--border-color); font-size: 0.95rem; color: var(--text-dark); }
+        .copyright a { color: var(--text-medium); text-decoration: none; }
+        .copyright a:hover { color: var(--primary); }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(13, 27, 42, 0.95);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9999; display: none;
+            backdrop-filter: blur(5px);
+        }
+
+        .loading-content { text-align: center; }
+        .loading-logo { font-size: 2.5rem; font-weight: 700; color: var(--primary); margin-bottom: 2rem; }
+        .loading-spinner {
+            width: 60px; height: 60px;
+            border: 5px solid rgba(0, 167, 157, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1.5s linear infinite;
+            margin: 0 auto 2rem;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .loading-text { color: white; font-size: 1.3rem; margin-bottom: 1rem; font-weight: 500; }
+        .loading-progress { width: 100%; max-width: 300px; height: 6px; background-color: rgba(255, 255, 255, 0.1); border-radius: 3px; margin: 0 auto; }
+        .loading-progress-bar { height: 100%; width: 0; background: var(--primary); border-radius: 3px; transition: width 0.3s ease; }
+
+        /* Responsive Styles */
+        @media (max-width: 992px) {
+            .results-container { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 3rem; }
+        }
+
+        @media (max-width: 768px) {
+            .header-container { flex-direction: row; }
+            .mobile-menu-btn { display: block; }
+            nav {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: var(--surface-bg);
+                padding: 1rem;
+                box-shadow: var(--shadow-medium);
+            }
+            nav.active { display: block; }
+            nav ul { flex-direction: column; gap: 0.8rem; }
+            nav a { display: block; padding: 0.8rem; text-align: center; }
+
+            .hero { padding: 4rem 0 6rem; }
+            .hero h1 { font-size: 2.5rem; }
+            .upload-section { padding: 2rem; margin: -3rem auto 3rem; }
+
+            .report-actions { flex-direction: column; gap: 1rem; }
+            .action-btn { width: 100%; justify-content: center; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--dark-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-light); }
+
+        /* Toast Notification */
+        .toast-notification {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--danger);
+            color: white; padding: 12px 24px;
+            border-radius: 8px; box-shadow: var(--shadow-soft);
+            z-index: 1000; opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .toast-notification.show { opacity: 1; transform: translate(-50%, -10px); }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-container">
+            <div class="logo">
+                <i class="fas fa-eye logo-icon"></i>
+                <span>MedVision AI</span>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <nav id="mainNav">
+                <ul>
+                    <li><a href="/" class="active">Home</a></li>
+                    <li><a href="#analyze">Upload & Scan</a></li>
+                    <li><a href="#features">Technology</a></li>
+                    <li><a href="/simulate">Simulation</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero" id="home">
+        <div class="container">
+            <h1>Precision Diagnostics. <span class="highlight">AI-Enhanced Insight.</span></h1>
+            <p>Our advanced system leverages cutting-edge artificial intelligence to interpret medical imagery, providing clinicians with clear, actionable data for improved patient outcomes.</p>
+        </div>
+    </section>
+
+    <main class="main-content">
+        <div class="container">
+            <section class="upload-section" id="analyze">
+                <div class="section-title">
+                    <h2>Initiate Analysis</h2>
+                </div>
+                <div class="upload-container">
+                    <div class="dropzone" id="dropzone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drop your medical scan here, or click to browse files</p>
+                        <small>Accepted Formats: JPG, PNG, JPEG (Up to 16MB)</small>
+                        <input type="file" id="fileInput" accept="image/png, image/jpeg, image/jpg">
+                    </div>
+
+                    <div class="preview-container" id="previewContainer" style="display: none;">
+                        <div class="preview-image-wrapper">
+                            <img id="imagePreview" class="preview-image" src="" alt="Preview">
+                            <div class="remove-image" id="removeImage">
+                                <i class="fas fa-times"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="model-selector">
+                        <label for="modelSelect">Choose a Diagnostic Model:</label>
+                        <div class="model-select-container">
+                            <select id="modelSelect" class="model-select">
+                                <option value="">Universal Model (Auto-Select)</option>
+                                <option value="liver">Liver Tumour</option>
+                                <option value="brain_mri">Brain Tumour</option>
+                                <option value="eye">Eye Conditions</option>
+                                <option value="kidney">Kidney Stone</option>
+                                <option value="lung">Lung Cancer</option>
+                            </select>
+                            <div class="select-arrow">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="analyze-btn" id="analyzeBtn" disabled>
+                        <i class="fas fa-search"></i> Begin Scan
+                    </button>
+                </div>
+            </section>
+
+            <section class="results-section" id="resultsSection">
+                <div class="section-title">
+                    <h2>Diagnostic Report</h2>
+                </div>
+                <div class="results-container">
+                    <div class="image-comparison">
+
+                        <div class="focused-chunk-container" id="focusedChunkContainer">
+                            <img id="scanImage" src="" class="scan-image" alt="Scanning in progress...">
+                            <div id="chunkOverlay" class="chunk-overlay"></div>
+                            <div class="scan-info-panel">
+                                <div id="scanStatus" class="status">Initializing Scan...</div>
+                                <div id="scanDetails" class="details"></div>
+                            </div>
+                        </div>
+
+                        <div class="image-slider-container" id="imageSliderContainer" style="display: none;">
+                            <div class="image-slider">
+                                <img id="originalImage" src="" alt="Original Image">
+                                <img id="processedImage" src="" alt="Processed Image">
+                                <div class="slider-handle"></div>
+                            </div>
+                            <div class="image-caption">
+                                <span>Input Scan</span>
+                                <span>AI Insight</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detection-results">
+                        <div class="detection-card">
+                            <h3><i class="fas fa-microscope"></i> Detection Summary</h3>
+                            <div class="detection-list" id="detectionResults">
+                                </div>
+                        </div>
+
+                        <div class="ai-insights">
+                            <h3><i class="fas fa-robot"></i> AI-Generated Narrative</h3>
+                            <div class="ai-insights-content" id="aiInsights">
+                                </div>
+                        </div>
+
+                        <div class="report-actions">
+                            <button class="action-btn download-btn" id="downloadReportBtn">
+                                <i class="fas fa-file-pdf"></i> Export PDF Report
+                            </button>
+                            <button class="action-btn new-analysis-btn" id="newAnalysisBtn">
+                                <i class="fas fa-redo"></i> Start a New Scan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <section class="features-section" id="features">
+        <div class="container">
+            <div class="section-title">
+                <h2>Platform Capabilities</h2>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-brain"></i></div>
+                    <h3>Specialized AI Models</h3>
+                    <p>Employs distinct neural networks trained for different anatomies and pathologies to maximize diagnostic accuracy.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                    <h3>Intelligent Summaries</h3>
+                    <p>Powered by Google's Gemini Pro to create coherent, clinically relevant narratives from quantitative data.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-file-pdf"></i></div>
+                    <h3>Instant Documentation</h3>
+                    <p>Automatically compiles detailed PDF reports that merge numerical findings with the AI's interpretive summary.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-sliders-h"></i></div>
+                    <h3>Dynamic Viewing</h3>
+                    <p>A user-friendly interface for direct visual comparison between the original scan and the AI-annotated results.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer id="contact">
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-column">
+                    <div class="logo footer-logo">
+                        <i class="fas fa-eye logo-icon"></i>
+                        <span>MedVision AI</span>
+                    </div>
+                    <p class="footer-description">Advancing medical diagnostics with cutting-edge AI to provide deeper insights from medical imagery.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                <div class="footer-column">
+                    <h3>Navigation</h3>
+                    <ul class="footer-links">
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#analyze">Upload & Scan</a></li>
+                        <li><a href="#features">Capabilities</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Get in Touch</h3>
+                    <ul class="contact-info">
+                        <li><i class="fas fa-envelope"></i><span>piyushmaurya132@gmail.com</span></li>
+                        <li><i class="fas fa-map-marker-alt"></i><span>VIT Chennai</span></li>
+                        <li><i class="fas fa-clock"></i><span>Hours: 9:00 - 17:00, Mon-Fri</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p> <a href="#">Privacy Statement</a> | <a href="#">Usage Terms</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-logo">MedVisionAI</div>
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Powering Up Analysis Core</div>
+            <div class="loading-progress">
+                <div class="loading-progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- All JavaScript from the original file can be pasted here ---
+        // It should work without modification as class names and IDs were preserved.
+
+        // Mobile Menu Toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            document.getElementById('mainNav').classList.toggle('active');
+            this.innerHTML = document.getElementById('mainNav').classList.contains('active') ?
+                '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+        });
+
+        // File Upload Handling
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const removeImage = document.getElementById('removeImage');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+
+        ['dragenter', 'dragover'].forEach(eventName => dropzone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('active'); }));
+        ['dragleave', 'drop'].forEach(eventName => dropzone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('active'); }));
+
+        dropzone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+        fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            const file = files[0];
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+            if (!allowedTypes.includes(file.type)) {
+                showToast('Invalid file type. Please upload JPG, PNG, or JPEG.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = e => {
+                imagePreview.src = e.target.result;
+                previewContainer.style.display = 'flex';
+                analyzeBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        removeImage.addEventListener('click', e => {
+            e.stopPropagation();
+            fileInput.value = '';
+            previewContainer.style.display = 'none';
+            analyzeBtn.disabled = true;
+        });
+analyzeBtn.addEventListener('click', () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const selectedModel = document.getElementById('modelSelect').value;
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+            const progressBar = document.getElementById('progressBar');
+
+            // --- FIX: Reset the loading screen's state before showing it ---
+            progressBar.style.width = '0%';
+            loadingText.textContent = "Initializing...";
+            // --- End of FIX ---
+
+            loadingOverlay.style.display = 'flex';
+
+            const progressMessages = ["Initializing...", "Preprocessing image...", "Running AI models...", "Generating insights...", "Compiling report..."];
+            let progress = 0;
+
+            // Set initial state immediately for better user feedback
+            progressBar.style.width = '10%';
+            loadingText.textContent = progressMessages[0];
+
+            const progressInterval = setInterval(() => {
+                progress++;
+                if (progress < progressMessages.length) {
+                    loadingText.textContent = progressMessages[progress];
+                    progressBar.style.width = `${(progress + 1) * (100 / progressMessages.length)}%`;
+                } else {
+                    // Stop the interval if the network fetch takes too long
+                    clearInterval(progressInterval);
+                }
+            }, 800); // Slightly faster interval for a better feel
+
+            const formData = new FormData();
+            formData.append('file', file);
+            if (selectedModel) formData.append('model', selectedModel);
+
+            fetch('/detect', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    clearInterval(progressInterval);
+                    progressBar.style.width = '100%'; // Animate to full before hiding
+
+                    // Hide after a short delay to show completion
+                    setTimeout(() => {
+                        loadingOverlay.style.display = 'none';
+                        if (data.error) {
+                            showToast(data.error);
+                            return;
+                        }
+                        displayResults(data);
+                    }, 400);
+                })
+                .catch(error => {
+                    clearInterval(progressInterval);
+                    loadingOverlay.style.display = 'none';
+                    console.error('Error:', error);
+                    showToast('An error occurred during analysis.');
+                });
+        });
+        // --- REBUILT AND NEW FUNCTIONS START HERE ---
+
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        function displayResults(data) {
+            const resultsSection = document.getElementById('resultsSection');
+            const chunkContainer = document.getElementById('focusedChunkContainer');
+            const sliderContainer = document.getElementById('imageSliderContainer');
+            const detectionResultsPanel = document.querySelector('.detection-results');
+
+            // Reset state
+            resultsSection.style.display = 'block';
+            chunkContainer.style.display = 'block';
+            sliderContainer.style.display = 'none';
+            detectionResultsPanel.classList.remove('visible');
+
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            populateResultData(data); // Populate data early for the animation to use
+
+            // Flatten all detections from different models into one array
+            let allDetections = [];
+            if (Array.isArray(data.detections)) {
+                allDetections = data.detections;
+            } else if (typeof data.detections === 'object' && data.detections !== null) {
+                allDetections = Object.values(data.detections).flat();
+            }
+
+            // Define what happens after the animation finishes
+            const onAnimationComplete = () => {
+                chunkContainer.style.display = 'none';
+                sliderContainer.style.display = 'block';
+
+                const processedImage = document.getElementById('processedImage');
+                const handle = sliderContainer.querySelector('.slider-handle');
+                const caption = sliderContainer.querySelector('.image-caption');
+
+                processedImage.style.clipPath = 'inset(0 0% 0 0)';
+                if (handle) handle.style.display = 'none';
+
+                if (caption) {
+                    caption.innerHTML = `<span>AI Analysis Complete</span>`;
+                    caption.style.justifyContent = 'center';
+                }
+
+                detectionResultsPanel.classList.add('visible');
+                triggerResultAnimations(data);
+            };
+
+            // Start the new focused chunk animation
+            runFocusedChunkAnimation(data.original_image, allDetections, onAnimationComplete);
+        }
+
+        async function runFocusedChunkAnimation(originalUrl, detections, onComplete) {
+            const image = document.getElementById('scanImage');
+            const chunkOverlay = document.getElementById('chunkOverlay');
+            const scanStatus = document.getElementById('scanStatus');
+            const scanDetails = document.getElementById('scanDetails');
+
+            image.src = originalUrl;
+            await new Promise(resolve => image.onload = resolve);
+
+            const imgWidth = image.naturalWidth;
+            const imgHeight = image.naturalHeight;
+            const viewWidth = image.clientWidth;
+            const viewHeight = image.clientHeight;
+            const scaleX = viewWidth / imgWidth;
+            const scaleY = viewHeight / imgHeight;
+
+            // Animation parameters
+            const GRID_COLS = 12;
+            const GRID_ROWS = 8;
+            chunkOverlay.innerHTML = ''; // Clear previous chunks
+            chunkOverlay.style.gridTemplateColumns = `repeat(${GRID_COLS}, 1fr)`;
+            chunkOverlay.style.gridTemplateRows = `repeat(${GRID_ROWS}, 1fr)`;
+
+            // Create all chunk divs
+            const chunks = [];
+            for (let i = 0; i < GRID_ROWS * GRID_COLS; i++) {
+                const chunk = document.createElement('div');
+                chunk.classList.add('chunk');
+                chunkOverlay.appendChild(chunk);
+                chunks.push(chunk);
+            }
+
+            scanStatus.textContent = 'Preparing focused analysis...';
+            scanDetails.textContent = '';
+            await sleep(1000);
+
+            // Sequentially analyze each chunk
+            for (let i = 0; i < chunks.length; i++) {
+                const chunk = chunks[i];
+                const row = Math.floor(i / GRID_COLS);
+                const col = i % GRID_COLS;
+
+                const sectorName = String.fromCharCode(65 + row) + (col + 1);
+                scanStatus.textContent = `Analyzing Sector ${sectorName}`;
+                scanDetails.textContent = 'Processing...';
+
+                chunk.classList.add('analyzing');
+                await sleep(50); // Short pause to show highlight
+
+                const boxWidth = viewWidth / GRID_COLS;
+                const boxHeight = viewHeight / GRID_ROWS;
+
+                const scanBoxRect = {
+                    x1: col * boxWidth,
+                    y1: row * boxHeight,
+                    x2: (col + 1) * boxWidth,
+                    y2: (row + 1) * boxHeight
+                };
+
+                let foundDetection = null;
+                for (const det of detections) {
+                    const [dx1, dy1, dx2, dy2] = det.bbox;
+                    const detRect = {
+                        x1: dx1 * scaleX, y1: dy1 * scaleY,
+                        x2: dx2 * scaleX, y2: dy2 * scaleY
+                    };
+
+                    if (scanBoxRect.x1 < detRect.x2 && scanBoxRect.x2 > detRect.x1 &&
+                        scanBoxRect.y1 < detRect.y2 && scanBoxRect.y2 > detRect.y1) {
+                        if (!foundDetection || det.confidence > foundDetection.confidence) {
+                            foundDetection = det;
+                        }
+                    }
+                }
+
+                chunk.classList.remove('analyzing');
+                if (foundDetection) {
+                    chunk.classList.add('detected');
+                    scanDetails.innerHTML = `<span style="color: var(--danger);">Anomaly Found!</span>`;
+                } else {
+                    chunk.classList.add('clear');
+                    scanDetails.textContent = 'Sector Clear';
+                }
+                await sleep(25); // Faster loop time
+            }
+
+            scanStatus.textContent = 'Scan Complete';
+            scanDetails.textContent = 'Reviewing findings heatmap...';
+
+            // Show the final heatmap
+            chunkOverlay.style.backgroundColor = 'rgba(0,0,0,0.6)';
+            chunks.forEach(c => c.style.backgroundColor = ''); // Let classes handle color
+
+            await sleep(2500); // Pause to view heatmap
+            onComplete();
+        }
+
+
+        function populateResultData(data) {
+            document.getElementById('originalImage').src = data.original_image;
+            document.getElementById('processedImage').src = data.processed_image;
+            document.getElementById('scanImage').src = data.original_image;
+
+            const detectionResults = document.getElementById('detectionResults');
+            detectionResults.innerHTML = '';
+
+            const processDetections = (detections, modelName = null) => {
+                 if (!detections || detections.length === 0) {
+                    if (!modelName) {
+                        const noFindings = document.createElement('p');
+                        noFindings.textContent = 'No significant pathological findings detected.';
+                        noFindings.style.fontStyle = 'italic';
+                        noFindings.style.color = 'var(--text-medium)';
+                        detectionResults.appendChild(noFindings);
+                    }
+                } else {
+                    detections.forEach(detection => detectionResults.appendChild(createDetectionItem(detection)));
+                }
+            };
+
+            if (typeof data.detections === 'object' && !Array.isArray(data.detections)) {
+                let hasAnyDetections = false;
+                 Object.entries(data.detections).forEach(([modelName, detections]) => {
+                    if (detections.length > 0) {
+                        hasAnyDetections = true;
+                        const modelHeader = document.createElement('h4');
+                        modelHeader.textContent = modelName.replace(/_/g, ' ').toUpperCase();
+                        modelHeader.style.cssText = 'margin-top: 1rem; color: var(--primary-light);';
+                        detectionResults.appendChild(modelHeader);
+                        processDetections(detections, modelName);
+                    }
+                });
+                if (!hasAnyDetections) {
+                     const noFindings = document.createElement('p');
+                     noFindings.textContent = 'No significant pathological findings were detected by any model.';
+                     noFindings.style.fontStyle = 'italic';
+                     noFindings.style.color = 'var(--text-medium)';
+                     detectionResults.appendChild(noFindings);
+                }
+            } else {
+                processDetections(data.detections);
+            }
+
+            document.getElementById('aiInsights').innerHTML = '';
+            document.getElementById('downloadReportBtn').onclick = () => window.open(data.pdf_report, '_blank');
+            document.getElementById('newAnalysisBtn').onclick = () => {
+                document.getElementById('resultsSection').style.display = 'none';
+                fileInput.value = '';
+                previewContainer.style.display = 'none';
+                analyzeBtn.disabled = true;
+                const sliderContainer = document.getElementById('imageSliderContainer');
+                const handle = sliderContainer.querySelector('.slider-handle');
+                const caption = sliderContainer.querySelector('.image-caption');
+                if(handle) handle.style.display = '';
+                if(caption) {
+                    caption.innerHTML = `<span>Original</span><span>AI Analysis</span>`;
+                    caption.style.justifyContent = 'space-between';
+                }
+                document.getElementById('analyze').scrollIntoView({ behavior: 'smooth' });
+            };
+        }
+
+        function triggerResultAnimations(data) {
+            document.querySelectorAll('.detection-item').forEach(item => {
+                const fill = item.querySelector('.meter-fill');
+                const confidence = parseFloat(item.dataset.confidence);
+                if (fill && !isNaN(confidence)) {
+                     setTimeout(() => { fill.style.width = `${confidence}%`; }, 100);
+                }
+            });
+
+            const aiInsights = document.getElementById('aiInsights');
+            aiInsights.innerHTML = '';
+            let i = 0;
+            const insightText = data.gemini_response || "";
+            const typeWriter = () => {
+                if (i < insightText.length) {
+                    aiInsights.innerHTML += insightText.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 15);
+                } else {
+                    document.querySelector('.typing-cursor')?.remove();
+                }
+            };
+            const cursor = document.createElement('span');
+            cursor.className = 'typing-cursor';
+            aiInsights.appendChild(cursor);
+            typeWriter();
+        }
+
+        function createDetectionItem(detection) {
+            const item = document.createElement('div');
+            item.className = 'detection-item';
+            const confidence = detection.confidence * 100;
+            item.dataset.confidence = confidence;
+
+            let color;
+            if (confidence > 80) color = 'var(--danger)';
+            else if (confidence > 60) color = 'var(--warning)';
+            else color = 'var(--success)';
+
+
+            item.innerHTML = `
+                <span class="detection-label">${detection.class.replace(/_/g, ' ')}</span>
+                <div class="confidence-meter">
+                    <div class="meter-bar">
+                        <div class="meter-fill" style="background-color: ${color}; width: 0%;"></div>
+                    </div>
+                    <span class="confidence-value">${confidence.toFixed(1)}%</span>
+                </div>
+            `;
+            return item;
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
